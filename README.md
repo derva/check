@@ -2,6 +2,10 @@
 
 Track your expenses in a snap! Just snap a receipt, upload it, and let **Check** do the rest.
 
+## version 0.1
+
+![web_design](image.png)
+
 ## How it works
 1. Go to the store and buy what you need.  
 2. Take a picture of your receipt.  
