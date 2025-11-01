@@ -26,6 +26,18 @@ func main() {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
+	r.GET("/home", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
+
+	r.GET("/about", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "about.html", nil)
+	})
+
+	r.GET("/upload", func (c *gin.Context) {
+		c.HTML(http.StatusOK, "upload_in_progress.html", nil)
+	})
+
 	// Upload endpoint
 	r.POST("/upload", router.HandleUpload)
 	r.POST("/save", router.HandleSave)

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Receipt OCR</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+	<div class="bg-white shadow-lg rounded-xl p-8 w-full max-w-lg">
+	<h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Receipt OCR</h1>
+
+	<!-- Upload Form -->
+	<form id="uploadForm" class="flex flex-col gap-4">
+		<label class="block text-gray-700 font-medium">Select your receipt</label>
+		<input type="file" id="photo" name="photo" class="border p-2 rounded" accept="image/*" required>
+		<button type="submit" class="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors">
+		Upload & Process
+		</button>
+		<button type="submit" id="save" class="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors">S A V E</button>
+
+
+	</form>
+
+	<!-- Image Preview -->
+	<div id="previewContainer" class="mt-4 hidden">
+		<h2 class="font-semibold text-gray-700 mb-2">Preview:</h2>
+		<img id="previewImage" class="rounded border shadow-sm max-h-60 w-auto" />
+	</div>
+
+	<!-- OCR Result -->
+	<div id="resultContainer" class="mt-6 hidden">
+		<div class="bg-gray-50 p-4 rounded shadow-inner">
+		<p id="vendor" class="font-semibold text-gray-700"></p>
+		<p id="date" class="text-gray-600"></p>
+		<p id="total" class="text-gray-600 mb-4"></p>
+		<table id="itemsTable" class="table-auto w-full text-left border-collapse">
+			<thead>
+			<tr class="bg-gray-200">
+				<th class="border px-2 py-1">#</th>
+				<th class="border px-2 py-1">Description</th>
+				<th class="border px-2 py-1">Quantity</th>
+				<th class="border px-2 py-1">Price</th>
+				<th class="border px-2 py-1">Total</th>
+			</tr>
+			</thead>
+			<tbody id="itemsBody"></tbody>
+		</table>
+		</div>
+	</div>
+	</div>
+
+  <script>
+	const form = document.getElementById('uploadForm');
+	const previewContainer = document.getElementById('previewContainer');
+	const previewImage = document.getElementById('previewImage');
+
+	const resultContainer = document.getElementById('resultContainer');
+	const vendorElem = document.getElementById('vendor');
+	const dateElem = document.getElementById('date');
+	const totalElem = document.getElementById('total');
+	const itemsBody = document.getElementById('itemsBody');
+
+	const photoInput = document.getElementById('photo');
+
+	// Show preview
+	photoInput.addEventListener('change', () => {
+		const file = photoInput.files[0];
+		if (file) {
+		previewImage.src = URL.createObjectURL(file);
+		previewContainer.classList.remove('hidden');
+		} else {
+		previewContainer.classList.add('hidden');
+		}
+	});
+
+	// Handle form submit
+	form.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		resultContainer.classList.remove('hidden');
+
+		vendorElem.textContent = "";
+		dateElem.textContent = "";
+		totalElem.textContent = "";
+		itemsBody.innerHTML = "";
+
+		const formData = new FormData(form);
+
+		try {
+		const response = await fetch('/upload', {
+			method: 'POST',
+			body: formData
+		});
+
+		if (!response.ok) throw new Error(`Server returned ${response.status}`);
+
+		let data = await response.json();
+		console.log(data);
+		// send it to the backend
+		const res2 = await fetch('/save', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json' // Set content type to JSON
+			},
+			body: JSON.stringify(data)
+		});
+
+		data = JSON.parse(data.text);
+		console.log(typeof data);
+		console.log(data.line_items);
+
+		// Vendor, Date, Total
+		vendorElem.textContent = data.vendor?.name || "Vendor: N/A";
+		dateElem.textContent = "Date: " + (data.date || "N/A");
+		totalElem.textContent = "Total: " + (data.total || "N/A") + " " + (data.currency_code || "");
+
+		// Line items
+		let items = data.line_items || [];
+		console.log("it3ems");
+		console.log(items);
+		
+		items.forEach((item, index) => {
+			const tr = document.createElement('tr');
+			tr.innerHTML = `
+			<td class="border px-2 py-1">${index + 1}</td>
+			<td class="border px-2 py-1">${item.description || ""}</td>
+			<td class="border px-2 py-1">${item.quantity || 0}</td>
+			<td class="border px-2 py-1">${item.price || 0}</td>
+			<td class="border px-2 py-1">${item.total || 0}</td>
+			`;
+			itemsBody.appendChild(tr);
+		});
+
+		} catch (err) {
+		resultContainer.innerHTML = `<p class="text-red-600 font-semibold">❌ Error: ${err.message}</p>`;
+		}
+	});
+  </script>
+</body>
+</html>
